@@ -1,33 +1,46 @@
 const { Sequelize } = require("sequelize");
+const fs = require("fs");
+const path = require("path");
+require("dotenv").config();
 
-// Configuração da conexão com o banco de dados
+const sslCertPath = path.join(__dirname, "..", "certs", "ca.pem");
+
+const sslCert = fs.readFileSync(sslCertPath);
+
 const sequelize = new Sequelize(
-  "nodesequelize",
-  "avnadmin",
-  "AVNS_ehXVp2Inz33j_DMFUYw",
+  process.env.database,
+  process.env.user,
+  process.env.password,
   {
-    host: "mysql-3b67bd1-samirasouza.k.aivencloud.com",
-    port: 22478,
+    host: process.env.host,
+    port: process.env.portdb,
     dialect: "mysql",
-    logging: console.log, // Mostra as queries SQL no console
+    logging: console.log,
     define: {
-      timestamps: true, // Adiciona createdAt e updatedAt automaticamente
-      underscored: false, // Usa camelCase ao invés de snake_case
+      timestamps: true,
+      underscored: false,
     },
     pool: {
-      max: 10, // Máximo de conexões simultâneas
-      min: 0, // Mínimo de conexões
-      acquire: 30000, // Tempo máximo para obter conexão (30s)
-      idle: 10000, // Tempo máximo que uma conexão pode ficar inativa (10s)
+      max: 10,
+      min: 0,
+      acquire: 30000,
+      idle: 10000,
+    },
+    dialectOptions: {
+      ssl: {
+        ca: sslCert,
+        rejectUnauthorized: true,
+      },
     },
   }
 );
 
-// Função para testar a conexão
 async function testConnection() {
   try {
     await sequelize.authenticate();
-    console.log("✅ Conexão com MySQL estabelecida com sucesso!");
+    console.log(
+      "✅ Conexão com MySQL estabelecida com sucesso (SSL habilitado)!"
+    );
   } catch (error) {
     console.error("❌ Erro ao conectar com o banco de dados:", error.message);
   }
